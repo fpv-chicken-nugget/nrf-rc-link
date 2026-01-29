@@ -35,17 +35,11 @@ typedef enum {
 
 // packet flags
 #define RC_FLAG_ACK_REQ     (1 << 0)
-#define RC_FLAG_EMERGENCY   (1 << 1)
 
-// command payload
+// payload
 typedef struct __attribute__((packed)) {
-    uint8_t bytes[RC_COMMAND_PAYLOAD_SIZE];
-} rc_command_payload_t;
-
-// telemetry payload
-typedef struct __attribute__((packed)) {
-    uint8_t bytes[RC_TELEMETRY_PAYLOAD_SIZE];
-} rc_telemetry_payload_t;
+    uint8_t bytes[RC_PAYLOAD_SIZE];
+} rc_payload_t;
 
 // complete packet
 typedef struct __attribute__((packed)) {
