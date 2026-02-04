@@ -1,5 +1,5 @@
 #include "link.h"
-#include "config.h"
+#include "rc_config.h"
 
 /**
  * @brief RC link state initialization
