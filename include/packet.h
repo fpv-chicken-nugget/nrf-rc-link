@@ -1,12 +1,7 @@
-#ifndef RC_PROTOCOL_PACKET_H
-#define RC_PROTOCOL_PACKET_H
-
-#include <stdint.h>
-#include <stdbool.h>
-#include "rc_config.h"
-
-
 /**
+* @file packet.h
+ * @brief RC protocol packet definitions
+ *
  * Packet structure:
  * ┌─────────────┬──────────────────────┬────────┐
  * │   Header    │       Payload        │  CRC   │
@@ -16,53 +11,59 @@
  *   Metadata         Actual data       Validation
  */
 
-// packet header
-typedef struct __attribute__((packed)) {
-    uint8_t version;
-    uint8_t type;
-    uint8_t sequence;
-    uint8_t flags;
-    uint8_t payload_len;
-} rc_packet_header_t;
+#ifndef PACKET_H
+#define PACKET_H
 
-// packet type
-typedef enum {
-    RC_PKT_COMMAND = 0x01,      // command packet
-    RC_PKT_TELEMETRY = 0x02,    // telemetry packet
-    RC_PKT_HEARTBEAT = 0x03,    // keep-alive packet
-    RC_PKT_EMERGENCY = 0x04     // emergency command
-} rc_packet_type_t;
+#include <stdint.h>
+#include "config.h"
 
-// packet flags
-#define RC_FLAG_ACK_REQ     (1 << 0)
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-// payload
-typedef struct __attribute__((packed)) {
-    uint8_t bytes[RC_PAYLOAD_SIZE];
-} rc_payload_t;
+    /*============================================================================*/
+    /* Packet Types                                                               */
+    /*============================================================================*/
 
-// complete packet
-typedef struct __attribute__((packed)) {
-    rc_packet_header_t header;
-    uint8_t payload[RC_MAX_PAYLOAD_SIZE - sizeof(rc_packet_header_t) - 1];
-    uint8_t crc8;
-} rc_packet_t;
+    /**
+     * @brief Packet types
+     */
+    typedef enum {
+        RC_PKT_COMMAND   = 0x01,    /* Ground → Aircraft: RC commands */
+        RC_PKT_TELEMETRY = 0x02,    /* Aircraft → Ground: Telemetry */
+        RC_PKT_ACK       = 0x03,    /* Acknowledgment (future use) */
+        RC_PKT_HEARTBEAT = 0x04     /* Keep-alive (future use) */
+    } rc_packet_type_t;
 
-// packet API
-void rc_packet_init(rc_packet_t *pkt, rc_packet_type_t type, uint8_t seq);
-void rc_packet_finalize(rc_packet_t *pkt, uint8_t payload_len);
-bool rc_packet_validate(const rc_packet_t *pkt);
-uint8_t rc_packet_size(const rc_packet_t *pkt);
+    /*============================================================================*/
+    /* Packet Structure                                                           */
+    /*============================================================================*/
 
-// generic payload encoding/decoding
-// applications should memcpy with their own struct types
-void rc_encode_payload(rc_packet_t *pkt, rc_packet_type_t type,
-                       const void *payload, uint8_t payload_len, uint8_t seq);
-bool rc_decode_payload(const rc_packet_t *pkt, void *payload, uint8_t expected_len);
+    /**
+     * @brief Packet header (5 bytes)
+     */
+    typedef struct __attribute__((packed)) {
+        uint8_t version;            /* Protocol version */
+        uint8_t type;               /* Packet type */
+        uint8_t sequence;           /* Sequence number (wraps at 255) */
+        uint8_t flags;              /* Status flags (reserved) */
+        uint8_t payload_len;        /* Payload length in bytes */
+    } rc_packet_header_t;
 
-// empty packet utility functions
-void rc_encode_heartbeat(rc_packet_t *pkt, uint8_t seq);
-void rc_encode_emergency(rc_packet_t *pkt, uint8_t seq);
-bool rc_is_emergency(const rc_packet_t *pkt);
+    /**
+     * @brief Complete packet (32 bytes)
+     */
+    typedef struct __attribute__((packed)) {
+        rc_packet_header_t header;              /* 5 bytes */
+        uint8_t payload[RC_MAX_PAYLOAD_SIZE];   /* 26 bytes */
+        uint8_t crc8;                           /* 1 byte */
+    } rc_packet_t;
 
-#endif // RC_PROTOCOL_PACKET_H
+    /* Compile-time validation */
+    _Static_assert(sizeof(rc_packet_t) == 32, "Packet must be exactly 32 bytes");
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* PACKET_H */
